@@ -1,8 +1,14 @@
-
 import { todoService } from "../../services/todo.service.js";
-import { SET_TODOS, REMOVE_TODO, ADD_TODO, UPDATE_TODO, SET_IS_LOADING, UNDO_TODOS} from "../reducers/todo.reducer.js";
-import { store } from "../store.js"
-
+import {
+  SET_TODOS,
+  SET_TODO,
+  REMOVE_TODO,
+  ADD_TODO,
+  UPDATE_TODO,
+  SET_IS_LOADING,
+  UNDO_TODOS,
+} from "../reducers/todo.reducer.js";
+import { store } from "../store.js";
 
 export function loadTodos() {
   const filterBy = store.getState().todoModule.filterBy;
@@ -21,6 +27,21 @@ export function loadTodos() {
     });
 }
 
+export function loadTodo(todoId) {
+  store.dispatch({ type: SET_IS_LOADING, isLoading: true });
+  return todoService
+    .get(todoId)
+    .then((todo) => {
+      store.dispatch({ type: SET_TODO, todo });
+    })
+    .catch((err) => {
+      console.log(`todo action -> Cannot load todo`, err);
+      throw err;
+    })
+    .finally(() => {
+      store.dispatch({ type: SET_IS_LOADING, isLoading: false });
+    });
+}
 
 export function removeTodo(todoId) {
   return todoService
@@ -44,8 +65,10 @@ export function removeTodoOptimistic(todoId) {
 }
 
 export function saveTodo(todo) {
-  const type = todo._id ? UPDATE_TODO : ADD_TODO
-  return todoService.save(todo)
+  const type = todo._id ? UPDATE_TODO : ADD_TODO;
+  console.log(type)
+  return todoService
+    .save(todo)
     .then((savedTodo) => {
       store.dispatch({ type, todo: savedTodo });
       return savedTodo;

@@ -1,48 +1,50 @@
-import { todoService } from "../services/todo.service.js"
-import { showErrorMsg } from "../services/event-bus.service.js"
+import { loadTodo } from "../store/actions/todo.actions.js";
 
-const { useState, useEffect } = React
-const { useParams, useNavigate, Link } = ReactRouterDOM
+const { useEffect } = React;
+const { useParams, useNavigate, Link } = ReactRouterDOM;
+const { useSelector } = ReactRedux;
+
 export function TodoDetails() {
+  const todo = useSelector((storeState) => storeState.todoModule.todo);
+  console.log(todo);
+  const navigate = useNavigate();
+  const params = useParams();
+  console.log(params);
+  const isLoading = useSelector(
+    (storeState) => storeState.todoModule.isLoading
+  );
 
-    const [todo, setTodo] = useState(null)
-    const params = useParams()
-    const navigate = useNavigate()
-
-    useEffect(() => {
-        if (params.todoId) {
-            loadTodo(params.todoId)
-        }
-    }, [params.todoId])
-
-
-    function loadTodo() {
-        todoService.get(params.todoId)
-            .then(setTodo)
-            .catch(err => {
-                console.error('err:', err)
-                showErrorMsg('Cannot load todo')
-                navigate('/todo')
-            })
+  useEffect(() => {
+    if (params.todoId) {
+        console.log("try to load todo"),
+        loadTodo(params.todoId)
+        .catch((err) => console.log("Couldn't load todo", err)
+        //onBack()
+        );
     }
+  }, [params.todoId]);
 
-    function onBack() {
-        navigate('/todo')
-    }
+  function onBack() {
+    navigate("/todo");
+  }
 
-    if (!todo) return <div>Loading...</div>
-    return (
-        <section className="todo-details">
-            <h1 className={(todo.isDone)? 'done' : ''}>{todo.txt}</h1>
-            <h2>{(todo.isDone)? 'Done!' : 'In your list'}</h2>
-
-            <h1>Todo importance: {todo.importance}</h1>
-            <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Enim rem accusantium, itaque ut voluptates quo? Vitae animi maiores nisi, assumenda molestias odit provident quaerat accusamus, reprehenderit impedit, possimus est ad?</p>
-            <button onClick={onBack}>Back to list</button>
-            <div>
-                <Link to={`/todo/${todo.nextTodoId}`}>Next Todo</Link> |
-                <Link to={`/todo/${todo.prevTodoId}`}>Previous Todo</Link>
-            </div>
-        </section>
-    )
+  const { txt, importance, isDone, nextTodoId, prevTodoId } = todo || {};
+  return (
+    <section className="todo-details">
+      {!isLoading ? (
+        <div>
+          <h4 className={isDone ? "done" : ""}>Todo name:{ txt}</h4>
+          <h4>Todo Status:{ isDone ? "Done!" : "Still hasn't done"}</h4>
+          <h4>Todo importance:{ importance}</h4>
+          <button onClick={onBack}>Back to list</button>
+          <h4>
+            <Link to={`/todo/${nextTodoId}`}>Next Todo</Link> |
+            <Link to={`/todo/${prevTodoId}`}>Previous Todo</Link>
+          </h4>
+        </div>
+      ) : (
+        <div> Loading...</div>
+      )}
+    </section>
+  );
 }

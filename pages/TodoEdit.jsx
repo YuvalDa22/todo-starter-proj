@@ -1,25 +1,24 @@
 import { showErrorMsg, showSuccessMsg } from "../services/event-bus.service.js";
-import { todoService } from "../services/todo.service.js";
-import { saveTodo } from "../store/actions/todo.actions.js";
+import { loadTodo, saveTodo } from "../store/actions/todo.actions.js";
+import { SET_TODO } from "../store/reducers/todo.reducer.js";
 
-const { useEffect, useState } = React;
+const { useEffect } = React;
 const { useNavigate, useParams } = ReactRouterDOM;
+const { useSelector, useDispatch } = ReactRedux;
 
 export function TodoEdit() {
-  const [todoToEdit, setTodoToEdit] = useState(todoService.getEmptyTodo());
+  const todo = useSelector((storeState) => storeState.todoModule.todo);
   const navigate = useNavigate();
   const params = useParams();
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (params.todoId) loadTodo();
-  }, []);
-
-  function loadTodo() {
-    todoService
-      .get(params.todoId)
-      .then(setTodoToEdit)
-      .catch((err) => console.log("could not load todo", err));
-  }
+    if (params.todoId) {
+      loadTodo(params.todoId).catch((err) =>
+        console.log("Couldn't load todo", err)
+      );
+    }
+  }, [params.todoId]);
 
   function handleChange({ target }) {
     const field = target.name;
@@ -38,25 +37,28 @@ export function TodoEdit() {
       default:
         break;
     }
-    setTodoToEdit(prevTodoToEdit => ({ ...prevTodoToEdit, [field]: value }))
+
+    dispatch({
+      type: SET_TODO,
+      todo: { ...todo, [field]: value },
+    });
   }
+
 
   function onSaveTodo(ev) {
     ev.preventDefault();
-    return (
-      saveTodo(todoToEdit)
+    saveTodo(todo)
       .then(() => {
-        showSuccessMsg("Todo saved")
-        navigate("/todo")
+        showSuccessMsg("Todo saved");
+        navigate("/todo");
       })
-      .catch(err => {
-      console.log(err)
-      showErrorMsg("Could not update todo", err);
-      })
-      )
-    }
+      .catch((err) => {
+        console.log(err);
+        showErrorMsg("Could not update todo", err);
+      });
+  }
 
-  const { txt, importance, isDone } = todoToEdit;
+  const { txt, importance, isDone } = todo || {};
 
   return (
     <section className="todo-edit">
@@ -91,5 +93,5 @@ export function TodoEdit() {
         <button>Save</button>
       </form>
     </section>
-  )
+  );
 }
